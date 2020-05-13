@@ -17,7 +17,10 @@ class FavouritesViewController: UIViewController {
         var shouldEndPage = Bool()
         var currentPageIndex : Int = 1
         var total_entries = 0
-        
+        var db:DBHelper = DBHelper()
+           
+           var restuarants:[Restaurant] = []
+           
         override func viewDidLoad() {
             super.viewDidLoad()
             self.shouldEndPage = false
@@ -38,36 +41,15 @@ class FavouritesViewController: UIViewController {
         @objc func favoriteClicked(sender: UIButton){
             let indexPath = sender.tag
             if let data = self.arr_resturants[indexPath] as? NSDictionary {
+                if let rid = data.value(forKey: "id") as? Int {
+                    //UPDATE Restaurant SET isFavourite = 1 WHERE id = rid
+                }
             }
         }
         
         func fetchData() {
-            
-            WebserviceHandler.shared.getList(pageCount: currentPageIndex) { (isSuccess, response) in
-                if isSuccess {
-                    //Load data on database
-                    if let entries = response.value(forKey: "total_entries") as? Int{
-                         self.total_entries = entries
-                     }
-                    if let data = response.value(forKey: "restaurants") as? NSArray, data.count > 0 {
-                       
-                        self.arr_resturants.addObjects(from: data as! [Any])
-                        if self.arr_resturants.count < 50 {
-                               self.shouldEndPage = true
-                           }
-                    } else {
-                        if self.arr_resturants.count > 0{
-                            self.shouldEndPage = true
-                        }
-                    }
-                    
-                    self.tableView.reloadData()
-                } else {
-                    //Error, Something went wrong
-                }
-            }
-            currentPageIndex = currentPageIndex + 1
-
+            restuarants = db.fetchFavouriteRestaurants()
+            self.tableView.reloadData()
         }
 
     }
@@ -105,20 +87,13 @@ class FavouritesViewController: UIViewController {
 
         func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
             
-            if self.arr_resturants.count > 0 {
-                return self.arr_resturants.count + 1
+            if self.restuarants.count > 0 {
+                return self.restuarants.count + 1
             }
             return 0
             
         }
 
-        func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-
-            if self.arr_resturants.count > 0 && indexPath.row == self.arr_resturants.count - 1 && self.arr_resturants.count > 49 && self.shouldEndPage == false {
-                self.fetchData()
-            }
-        }
-        
         func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
             
            if (self.arr_resturants.count > 0 && (indexPath.row == self.arr_resturants.count)) {
@@ -157,36 +132,31 @@ class FavouritesViewController: UIViewController {
                 btn_reserve.cornerRadius = 8
             }
             
-            let mainview = displayData.contentView.viewWithTag(999) as! UIView
-            mainview.cornerRadius = 5
-            mainview.dropShadow(color:.lightGray, opacity: 1, offSet: CGSize(width: 0, height:3), radius: 2, scale: true)
-            
-            if self.arr_resturants.count > 0 {
-            
-              if let dict = self.arr_resturants .object(at: indexPath.row) as? NSDictionary{
-                let imgUrl = dict.object(forKey: "image_url") as! String
-                imgView.sd_setImage(with: URL.init(string: imgUrl), placeholderImage: UIImage.init(named: "placeholder"), options: .highPriority, progress: nil) { (image, error, CacheType, url) in
-                    if error == nil{
-                        imgView.image = image
-                    } else {
-                        imgView.image = UIImage.init(named: "placeholder")
-                    }
-                }
-                
-                  if let name = dict .value(forKey: "name") as? String, name.count > 0  {
-                      lbl_name.text = "\(name)"
+              let mainview = displayData.contentView.viewWithTag(999) as! UIView
+                  mainview.cornerRadius = 5
+                  mainview.dropShadow(color:.lightGray, opacity: 1, offSet: CGSize(width: 0, height:3), radius: 2, scale: true)
+                  
+                  if self.arr_resturants.count > 0 {
+                  
+                      
+                    if let dict = self.restuarants[indexPath.row] as? Restaurant{
+                      let imgUrl = dict.image_url as! String
+                      imgView.sd_setImage(with: URL.init(string: imgUrl), placeholderImage: UIImage.init(named: "placeholder"), options: .highPriority, progress: nil) { (image, error, CacheType, url) in
+                          if error == nil{
+                              imgView.image = image
+                          } else {
+                              imgView.image = UIImage.init(named: "placeholder")
+                          }
+                      }
+                      
+                          lbl_name.text = dict.name
+                          lbl_address.text = dict.address
+                          lbl_contact.text = "Contact : \(dict.phone)"
+                      
+                      }
                   }
-                    if let address = dict .value(forKey: "address") as? String, address.count > 0  {
-                        lbl_address.text = "\(address)"
-                    }
-                    if let contact = dict .value(forKey: "phone") as? String, contact.count > 0  {
-                        lbl_contact.text = "Contact : \(contact)"
-                    }
-                
-                }
-            }
-            return displayData
-        }
+                  return displayData
+              }
         
     }
 

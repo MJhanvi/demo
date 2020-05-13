@@ -38,11 +38,14 @@ class ListViewController: UIViewController {
         }
     }
     
-    @objc func favoriteClicked(sender: UIButton){
-        let indexPath = sender.tag
-        if let data = self.arr_resturants[indexPath] as? NSDictionary {
-        }
-    }
+     @objc func favoriteClicked(sender: UIButton){
+       let indexPath = sender.tag
+       if let data = self.arr_resturants[indexPath] as? NSDictionary {
+           if let rid = data.value(forKey: "id") as? Int {
+               //UPDATE Restaurant SET isFavourite = 1 WHERE id = rid
+           }
+       }
+   }
     
     func fetchData() {
         WebserviceHandler.shared.getList(pageCount: currentPageIndex) { (isSuccess, response) in
